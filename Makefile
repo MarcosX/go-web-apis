@@ -43,3 +43,8 @@ stop:
 	@echo "Stopping front end..."
 	@-pkill -SIGTERM -f "./${FRONT_END_BINARY}"
 	@echo "Stopped front end!"
+
+test_broker:
+	cd broker-service && go test cmd/api
+
+test: test_broker
