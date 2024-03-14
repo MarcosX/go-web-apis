@@ -1,5 +1,5 @@
 FROM alpine:3
 RUN mkdir /app
-COPY ./brokerApp /app
+COPY ./bin/brokerApp /app
 
 CMD ["/app/brokerApp"]
