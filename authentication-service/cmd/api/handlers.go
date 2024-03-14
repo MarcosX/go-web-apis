@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"jsonHelpers"
 	"net/http"
 )
 
@@ -12,29 +13,29 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	err := app.readJSON(w, r, &requestPayload)
+	err := jsonHelpers.ReadJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, err, http.StatusBadRequest)
+		jsonHelpers.ErrorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	user, err := app.Models.User.GetByEmail(requestPayload.Email)
 	if err != nil {
-		app.errorJSON(w, errors.New("Invalid credentials"), http.StatusUnauthorized)
+		jsonHelpers.ErrorJSON(w, errors.New("invalid credentials"), http.StatusUnauthorized)
 		return
 	}
 
 	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
-		app.errorJSON(w, errors.New("Invalid credentials"), http.StatusUnauthorized)
+		jsonHelpers.ErrorJSON(w, errors.New("invalid credentials"), http.StatusUnauthorized)
 		return
 	}
 
-	responsePayload := jsonResponse{
+	responsePayload := jsonHelpers.JsonResponse{
 		Error:   false,
 		Message: fmt.Sprintf("User %s logged in.", user.Email),
 		Data:    user,
 	}
 
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	jsonHelpers.WriteJSON(w, http.StatusAccepted, responsePayload)
 }

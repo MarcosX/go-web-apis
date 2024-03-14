@@ -1,4 +1,4 @@
-package main
+package jsonHelpers
 
 import (
 	"net/http"
@@ -8,14 +8,13 @@ import (
 )
 
 func TestWriteJSON(t *testing.T) {
-	app := Config{}
 	writer := httptest.NewRecorder()
-	data := jsonResponse{
+	data := JsonResponse{
 		Error:   false,
 		Message: "Hit the broker",
 	}
 	wantStatus := http.StatusOK
-	err := app.writeJSON(writer, wantStatus, data)
+	err := WriteJSON(writer, wantStatus, data)
 	want := []string{`"message":"Hit the broker"`, `"error":false`}
 	for i := range want {
 		if !strings.Contains(writer.Body.String(), want[i]) {

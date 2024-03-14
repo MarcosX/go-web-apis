@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"jsonHelpers"
 	"log"
 	"net/http"
 )
@@ -22,12 +23,12 @@ type AuthPayload struct {
 }
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
-	payload := jsonResponse{
+	payload := jsonHelpers.JsonResponse{
 		Error:   false,
 		Message: "Hit the broker",
 	}
 
-	err := app.writeJSON(w, http.StatusOK, payload)
+	err := jsonHelpers.WriteJSON(w, http.StatusOK, payload)
 	if err != nil {
 		log.Print(err.Error())
 	}
@@ -36,10 +37,10 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	var requestPayload RequestPayload
 
-	err := app.readJSON(w, r, &requestPayload)
+	err := jsonHelpers.ReadJSON(w, r, &requestPayload)
 	if err != nil {
 		log.Print(err.Error())
-		app.errorJSON(w, err)
+		jsonHelpers.ErrorJSON(w, err)
 		return
 	}
 
@@ -47,7 +48,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "auth":
 		app.authenticate(w, requestPayload.Auth)
 	default:
-		app.errorJSON(w, errors.New("unknown action"))
+		jsonHelpers.ErrorJSON(w, errors.New("unknown action"))
 	}
 }
 
@@ -55,14 +56,14 @@ func (app *Config) authenticate(w http.ResponseWriter, authPayload AuthPayload) 
 	jsonData, err := json.Marshal(authPayload)
 	if err != nil {
 		log.Printf("Error on json.Marshal(%v): %s", authPayload, err.Error())
-		app.errorJSON(w, fmt.Errorf("could not authenticate with %s", string(jsonData)))
+		jsonHelpers.ErrorJSON(w, fmt.Errorf("could not authenticate with %s", string(jsonData)))
 		return
 	}
 
 	request, err := http.NewRequest("POST", AuthenticationServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Error on http.NewRequest: %s", err)
-		app.errorJSON(w, errors.New("could not authenticate"))
+		jsonHelpers.ErrorJSON(w, errors.New("could not authenticate"))
 		return
 	}
 
@@ -70,38 +71,38 @@ func (app *Config) authenticate(w http.ResponseWriter, authPayload AuthPayload) 
 	response, err := httpClient.Do(request)
 	if err != nil {
 		log.Printf("Error on httpClient.Do: %s", err)
-		app.errorJSON(w, errors.New("could not authenticate"))
+		jsonHelpers.ErrorJSON(w, errors.New("could not authenticate"))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		app.errorJSON(w, errors.New("invalid credentials"))
+		jsonHelpers.ErrorJSON(w, errors.New("invalid credentials"))
 		return
 	} else if response.StatusCode != http.StatusAccepted {
 		log.Printf("Error on authentication service")
-		app.errorJSON(w, errors.New("could not authenticate"), response.StatusCode)
+		jsonHelpers.ErrorJSON(w, errors.New("could not authenticate"), response.StatusCode)
 		return
 	}
 
-	var authResponse jsonResponse
+	var authResponse jsonHelpers.JsonResponse
 	err = json.NewDecoder(response.Body).Decode(&authResponse)
 	if err != nil {
 		log.Printf("Error on json Decode %s", err)
-		app.errorJSON(w, errors.New("could not authenticate"))
+		jsonHelpers.ErrorJSON(w, errors.New("could not authenticate"))
 		return
 	}
 	if authResponse.Error {
 		log.Printf("Error on auth response: %s", authResponse.Message)
-		app.errorJSON(w, errors.New("could not authenticate"))
+		jsonHelpers.ErrorJSON(w, errors.New("could not authenticate"))
 		return
 	}
 
-	payloadResponse := jsonResponse{
+	payloadResponse := jsonHelpers.JsonResponse{
 		Error:   false,
 		Message: "authenticated",
 		Data:    authResponse.Data,
 	}
 
-	app.writeJSON(w, http.StatusAccepted, payloadResponse)
+	jsonHelpers.WriteJSON(w, http.StatusAccepted, payloadResponse)
 }
