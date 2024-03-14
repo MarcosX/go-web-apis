@@ -1,4 +1,6 @@
 version: '3'
+volumes:
+  pg_data:
 
 services:
   broker-service:
@@ -11,6 +13,18 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+  authentication-service:
+    build:
+      context: ./authentication-service
+      dockerfile: authentication-service.dockerfile
+    restart: always
+    ports:
+      - "8081:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
   postgres:
     image: 'postgres:14.0'
     ports:
@@ -22,5 +36,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: users
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - ./db-data/postgres/:/var/lib/postgresql/data/
+      - pg_data:/var/lib/postgresql/data:z

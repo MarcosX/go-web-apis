@@ -237,6 +237,7 @@ func (u *User) PasswordMatches(plainText string) (bool, error) {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
 			return false, nil
 		default:
+			log.Print(err)
 			return false, err
 		}
 	}

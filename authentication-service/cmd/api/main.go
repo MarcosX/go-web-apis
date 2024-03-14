@@ -16,7 +16,7 @@ import (
 
 const webPort = "80"
 
-type Congig struct {
+type Config struct {
 	DB     *sql.DB
 	Models data.Models
 }
@@ -25,11 +25,8 @@ func main() {
 	log.Println("Starting authentication service")
 
 	conn := connectToDB()
-	if conn == nil {
-		log.Panic("Can't connect to Postgres")
-	}
 
-	app := Congig{
+	app := Config{
 		DB:     conn,
 		Models: data.New(conn),
 	}
@@ -67,6 +64,7 @@ func connectToDB() *sql.DB {
 		connection, err := openDB(dsn)
 		if err != nil {
 			log.Println("Postgres not yet ready...")
+			log.Println(err)
 			connectAttempts++
 		} else {
 			log.Println("Connected to Postgres")
@@ -77,7 +75,7 @@ func connectToDB() *sql.DB {
 			log.Println("Waiting for DB...")
 			time.Sleep(2 * time.Second)
 		} else {
-			return nil
+			log.Panic("Can't connect to Postgres")
 		}
 	}
 }
