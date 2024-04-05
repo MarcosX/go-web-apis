@@ -12,10 +12,9 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-
 	err := jsonHelpers.ReadJSON(w, r, &requestPayload)
 	if err != nil {
-		jsonHelpers.ErrorJSON(w, err, http.StatusBadRequest)
+		jsonHelpers.ErrorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
 		return
 	}
 
